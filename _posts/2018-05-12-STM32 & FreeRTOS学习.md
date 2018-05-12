@@ -7,7 +7,7 @@ tags: [STM32,FreeRTOS]
 description: 
 
 ---
-#系统时钟节拍
+# 系统时钟节拍
 configTICK_RATE_HZ  1000 表示1KHZ节拍，1ms
 configUSE_TIME_SLICING 打开task时间片管理
 
@@ -23,7 +23,7 @@ configUSE_TIME_SLICING 打开task时间片管理
 程堆栈指针 PSP 是给任务栈使用的。 也就是说，在 FreeRTOS 任务中，所有栈空间的使用都是通过
 PSP 指针进行指向的。 一旦进入了中断函数以及可能发生的中断嵌套都是用的 MSP 指针。
 
-#优先级
+# 优先级
 当所有task都高于timer 和idle时，如果一直有未完成的工作，timer不会运行
 
 #Timer
@@ -33,7 +33,7 @@ PSP 指针进行指向的。 一旦进入了中断函数以及可能发生的中
 
 软定时器是通过一个任务来辅助实现，该功能时刻裁剪的 ， 只有设置 FreeRTOSConfig.h 中configUSE_TIMERS == 1 将相关代码编译进来, 才能正常使用相关功能。
 
-##配置定时器服务任务
+## 配置定时器服务任务
 程序中需要使用到软件定时器， 需要先在 FreeRTOSConfig.h 中正确配置如下宏 ： 
 * configUSE_TIMERS 
 是否编译定时器相关代码， 如需要使用定时器， 设置为 1 
@@ -44,7 +44,7 @@ PSP 指针进行指向的。 一旦进入了中断函数以及可能发生的中
 * configTIMER_TASK_STACK_DEPTH 
 设置定时器Daemon 任务的栈大小
 
-##创建 启动 停止定时器
+## 创建 启动 停止定时器
 
 ```c
 TimerHandle_t xTimerUser; // 定义句柄
@@ -93,7 +93,7 @@ void fun()
 ![image_1cb90la41184u1agv1fgmve15f59.png-38.1kB][1]
 
 
-##修改定时器
+## 修改定时器
 在申请定时器的时候设置的定时器周期， 可以通过函数 xTimerChangePeriod 修改， 如下示例 ：
 ```c
 void vAFunction_2( TimerHandle_t xTimer )
@@ -135,7 +135,7 @@ void vAFunction_2( TimerHandle_t xTimer )
 另外， 可以通过函数 xTimerReset 重启定时器， 如果已经启动计数， 重新开始计数; 如果没有启动，启动定时器。
 >定时器使用系统提供 API，涉及 Queue 操作， 如果是在中断程序中调用，需要调用对应带 FromISR的接口。
 
-##获取定时器状态
+## 获取定时器状态
 其他获取定时器信息的函数
 ```c
 // 获取名称 ， 申请是设置的字符串
@@ -146,13 +146,13 @@ xTimerGetPeriod()
 xTimerGetExpiryTime()
 ```
 
-##定时器实现
+## 定时器实现
 FreeRTOS 软定时器的实现在源码目录 Source/include/timers.h, 涉及 链表 和 消息队列(后续文章分析)。
 
-##数据结构
+## 数据结构
 使用定时器前，需要先申请定时器， 见 配置定时器服务任务 中， 通过函数 xTimerCreate获取一个定时器， 实际上是向系统申请了一块内存存储定时器控制块的数据结构, 并将参数填写到该结构体中。
 
-##定时器控制块
+## 定时器控制块
 ![image_1cb90q1qv1tdlctn11hq1ncj1kk416.png-29.6kB][2]
 ```c
 typedef struct tmrTimerControl
@@ -193,10 +193,10 @@ PRIVILEGED_DATA static List_t *pxCurrentTimerList;
 PRIVILEGED_DATA static List_t *pxOverflowTimerList;
 ```
 
-##命令队列
+## 命令队列
 文章开头提到的使用定时器的函数， 大部分都带有一个参数，用于设置调用后允许阻塞的最大时间， 原因是， 这些函数并没有直接操作定时器管理链表， 而是向定时器Daemon 任务的消息队列 xTimerQueue 发送消息命令。 之后， 定时器Daemon 任务会从消息队列取出消息并响应操作。
 
-##定时器服务任务
+## 定时器服务任务
 此处，从系统启动的定时器Daemon 任务展开分析 FreeRTOS 的软定时器的实现 。 
 该任务主体的执行流程如下所示 ：
 ![image_1cb910kc018id396dnqhbo1e5f30.png-58.9kB][3]
@@ -218,7 +218,7 @@ for( ;; )
 }
 ```
 
-##回调定时器
+## 回调定时器
 定时器任务中， 取出下一个定时器溢出的时间，并把它传递给函数prvProcessTimerOrBlockTask， 该函数负责处理溢出定时器， 应对节拍计数器溢出问题等， 并设置合适的时间阻塞 Daemon 任务， 让出 CPU 使用权直到下一个定时器溢出或者接收到新的命令。
 ```c
 static void prvProcessTimerOrBlockTask(
@@ -279,7 +279,7 @@ static void prvProcessTimerOrBlockTask(
     }
 }
 ```
-##处理节拍计数器溢出
+## 处理节拍计数器溢出
 上面提到， 通过函数 prvSampleTimeNow判断节拍计数器是否发发生溢出， 并执行相应处理， 此处看看该函数内容 ：
 ```c
 static TickType_t prvSampleTimeNow( BaseType_t * const pxTimerListsWereSwitched )
@@ -377,7 +377,7 @@ static void prvSwitchTimerLists( void )
 ```
 函数 prvProcessTimerOrBlockTask 中， 当节拍计数器没有溢出， 判断当前管理链表上溢出定时器并进行处理的函数 prvProcessExpiredTimer 整体和上面介绍差别不大， 执行函数回调， 判断是否需要重载等。
 
-##命令处理
+## 命令处理
 用户将需要处理的定时器命令发送到定时器的消息队列， Daemon 任务每次执行期间回去读取并执行， 这部分工作有任务主体中的函数 prvProcessReceivedCommands完成， 下面看看这个函数如何实现， 对应平时使用定时器控制函数更加有底。 
 以下代码做了简化
 ```c
